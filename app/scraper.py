@@ -5,7 +5,7 @@ from pymongo import MongoClient
 import os
 
 # Configuration
-API_URL = "https://plan.navcanada.ca/weather/api/alpha/?site=CYYU&alpha=upperwind&_=1733882059949"
+API_URL = "https://plan.navcanada.ca/weather/api/alpha/?site=CYYU&alpha=upperwind"
 
 # Altitude categories
 HIGH_ALTITUDES = {24000, 30000, 34000, 39000, 45000, 53000}
