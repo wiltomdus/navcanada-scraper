@@ -46,6 +46,7 @@ def is_pm_data(start, end):
 def parse_data(data):
     """Parse and filter data for AM and PM periods, combining altitudes into a single list."""
     parsed_results = {"AM": [], "PM": []}
+    parsed_results["datetime"] = datetime.now().isoformat()
 
     for entry in data.get("data", []):
         start_validity = entry["startValidity"]
@@ -76,9 +77,10 @@ def parse_data(data):
 
     # Sort the results by altitude for each period
     for period in parsed_results:
-        parsed_results[period] = sorted(
-            parsed_results[period], key=lambda x: x["altitude"]
-        )
+        if period != "datetime":
+            parsed_results[period] = sorted(
+                parsed_results[period], key=lambda x: x["altitude"]
+            )
 
     return parsed_results
 
