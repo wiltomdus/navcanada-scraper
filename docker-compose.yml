@@ -10,7 +10,6 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./mongo-init:/docker-entrypoint-initdb.d
-
   scraper:
     build: .
     container_name: navcanada_scraper

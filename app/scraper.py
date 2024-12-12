@@ -1,8 +1,11 @@
-import requests
-from datetime import datetime, time
 import json
-from pymongo import MongoClient
 import os
+from datetime import datetime, time
+from time import sleep
+
+import requests
+import schedule
+from pymongo import MongoClient
 
 # Configuration
 API_URL = "https://plan.navcanada.ca/weather/api/alpha/?site=CYYU&alpha=upperwind"
@@ -98,6 +101,7 @@ def store_data(data):
 
 
 def main():
+
     print("Starting upper winds data scraper...")
     data = fetch_upper_winds()
     if data:
@@ -111,4 +115,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    schedule.every().day.at("20:30", "America/Montreal").do(main)
+
+    while True:
+        schedule.run_pending()
+        sleep(1)

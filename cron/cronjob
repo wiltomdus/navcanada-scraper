@@ -1,1 +1,0 @@
-30 20 * * * python /app/scraper.py >> /var/log/cron.log 2>&1
