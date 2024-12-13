@@ -33,17 +33,17 @@ def fetch_upper_winds():
 
 
 def is_am_data(start, end):
-    """Check if the time range falls within the AM period (3am to noon)."""
+    """Check if the time range falls within the AM period (5am to 9am)."""
     start_time = datetime.fromisoformat(start).time()
     end_time = datetime.fromisoformat(end).time()
-    return time(3, 0) <= start_time <= time(11, 59)
+    return time(5, 0) <= start_time <= time(8, 59)
 
 
 def is_pm_data(start, end):
-    """Check if the time range falls within the PM period (noon to midnight)."""
+    """Check if the time range falls within the PM period (9am to 18:00)."""
     start_time = datetime.fromisoformat(start).time()
     end_time = datetime.fromisoformat(end).time()
-    return time(12, 0) <= start_time <= time(23, 59)
+    return time(9, 0) <= start_time <= time(17, 59)
 
 
 def parse_data(data):
@@ -115,7 +115,7 @@ def main():
 
 
 if __name__ == "__main__":
-    schedule.every().day.at("20:30", "America/Montreal").do(main)
+    schedule.every().day.at("06:00", "America/Montreal").do(main)
 
     while True:
         schedule.run_pending()
