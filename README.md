@@ -1,7 +1,8 @@
 # navcanada-scraper
 
 This project is a Python script that fetches upper winds data from the Nav Canada API, parses the data, and stores it in a MongoDB database.
-It runs on a schedule every day at 20:30.
+It runs on a schedule every day at 06:00.
+It stores AM and PM data in a JSON object on the mongoDB.
 
 ## Requirements
 
