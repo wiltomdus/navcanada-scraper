@@ -15,6 +15,7 @@ services:
     container_name: navcanada_scraper
     environment:
       - MONGO_URI=mongodb://mongo:27017/
+      - ICAO_CODES=CYYU,CYUL
     depends_on:
       - mongo
 
