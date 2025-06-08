@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mongo:
-    image: mongo:5.0
+    image: mongodb-raspberrypi4-unofficial-r7.0.14:latest
     container_name: mongo
     restart: always
     ports:
@@ -15,9 +15,10 @@ services:
     container_name: navcanada_scraper
     environment:
       - MONGO_URI=mongodb://mongo:27017/
-      - ICAO_CODES=CYYU,CYUL
+      - ICAO_CODES=CYYU,CYUL,CYTF,CYFC
     depends_on:
       - mongo
+    restart: unless-stopped
 
 volumes:
   mongo-data:
