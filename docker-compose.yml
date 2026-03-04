@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mongo:
-    image: mongo:5.0
+    image: mongodb-raspberrypi4-unofficial-r7.0.14:latest
     container_name: mongo
     restart: always
     ports:
@@ -15,7 +15,23 @@ services:
     container_name: navcanada_scraper
     environment:
       - MONGO_URI=mongodb://mongo:27017/
-      - ICAO_CODES=CYYU,CYUL
+      - ICAO_CODES=CYYU,CYUL,CYTF,CYFC
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
     depends_on:
       - mongo
 
