@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime, time
 from time import sleep
@@ -7,11 +8,38 @@ import requests
 import schedule
 import pymongo
 
+# Configure logging for Docker
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
+
 # Configuration
 ICAO_CODES = os.getenv("ICAO_CODES", "CYYU").split(",")
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DATABASE_NAME = "navcanada"
 COLLECTION_NAME = "upper_winds"
+
+
+def get_mongo_client():
+    """
+    Return a connected MongoClient.  The function pings the server
+    so that DNS/connection errors are raised immediately.
+    """
+    try:
+        client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        # force a round‑trip
+        client.admin.command("ping")
+        return client
+    except pymongo.errors.PyMongoError as e:
+        logger.error(f"Unable to connect to MongoDB at {MONGO_URI}: {e}")
+        logger.error(
+            "Check that the host name in MONGO_URI is correct "
+            "(docker-compose service, /etc/hosts entry, etc.)"
+        )
+        raise
 
 
 def fetch_upper_winds(icao_code) -> json:
@@ -25,7 +53,7 @@ def fetch_upper_winds(icao_code) -> json:
         data = response.json()
         return data
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching data for {icao_code}: {e}")
+        logger.error(f"Error fetching data for {icao_code}: {e}")
         return None
 
 
@@ -92,34 +120,43 @@ def parse_data(data) -> json:
 def store_data(data, icao_code) -> None:
     """Store the parsed data into MongoDB."""
     try:
-        client = pymongo.MongoClient(MONGO_URI)
+        client = get_mongo_client()
         db = client[icao_code]  # Use ICAO code as the database name
         collection = db[COLLECTION_NAME]
 
         collection.insert_one(data)
-        print(f"Data for {icao_code} stored in MongoDB.")
+        logger.info(f"Data for {icao_code} stored in MongoDB successfully.")
     except pymongo.errors.ConnectionFailure as e:
-        print(f"Connection failure storing data for {icao_code}: {e}")
+        logger.error(f"Connection failure storing data for {icao_code}: {e}")
     except pymongo.errors.OperationFailure as e:
-        print(f"Operation failure storing data for {icao_code}: {e}")
+        logger.error(f"Operation failure storing data for {icao_code}: {e}")
 
 
 def main():
-    print("Starting upper winds data scraper...")
+    logger.info("Starting upper winds data scraper...")
     for icao_code in ICAO_CODES:
+        logger.info(f"Fetching data for {icao_code}")
         data = fetch_upper_winds(icao_code)
         if data:
             results = parse_data(data)
-            print(json.dumps(results, indent=4))
+            logger.info(f"Fetched and parsed data for {icao_code}")
+            # logger.debug(json.dumps(results, indent=4))
 
             store_data(results, icao_code)
         else:
-            print(f"No data fetched for {icao_code}.")
+            logger.warning(f"No data fetched for {icao_code}.")
 
 
 if __name__ == "__main__":
-    schedule.every().day.at("06:00", "America/Montreal").do(main)
-
+    logger.info(f"Scraper started. ICAO codes: {', '.join(ICAO_CODES)}")
+    logger.info(f"MongoDB URI: {MONGO_URI}")
+    
+    schedule.every().day.at("02:00", "America/Montreal").do(main)  # 00Z buffer
+    schedule.every().day.at("08:00", "America/Montreal").do(main)  # 12Z buffer
+    schedule.every().day.at("14:00", "America/Montreal").do(main)  # 18Z buffer
+    schedule.every().day.at("20:00", "America/Montreal").do(main)  # 06Z buffer
+    
+    logger.info("Scheduler initialized. Waiting for scheduled times...")
     while True:
         schedule.run_pending()
         sleep(1)
