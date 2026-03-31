@@ -19,26 +19,28 @@ logger = logging.getLogger(__name__)
 # Configuration
 ICAO_CODES = os.getenv("ICAO_CODES", "CYYU").split(",")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+MONGO_CONNECTION_TIMEOUT = int(os.getenv("MONGO_CONNECTION_TIMEOUT", "5000"))
 DATABASE_NAME = "navcanada"
 COLLECTION_NAME = "upper_winds"
 
 
 def get_mongo_client():
     """
-    Return a connected MongoClient.  The function pings the server
-    so that DNS/connection errors are raised immediately.
+    Return a connected MongoClient.
+    Raises immediately if connection fails.
     """
     try:
-        client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-        # force a round‑trip
+        client = pymongo.MongoClient(
+            MONGO_URI, 
+            serverSelectionTimeoutMS=MONGO_CONNECTION_TIMEOUT,
+            connectTimeoutMS=MONGO_CONNECTION_TIMEOUT,
+            retryWrites=False
+        )
         client.admin.command("ping")
+        logger.info("Connected to MongoDB")
         return client
     except pymongo.errors.PyMongoError as e:
-        logger.error(f"Unable to connect to MongoDB at {MONGO_URI}: {e}")
-        logger.error(
-            "Check that the host name in MONGO_URI is correct "
-            "(docker-compose service, /etc/hosts entry, etc.)"
-        )
+        logger.error(f"MongoDB connection failed: {MONGO_URI} - {type(e).__name__}: {e}")
         raise
 
 
@@ -124,7 +126,7 @@ def store_data(data, icao_code) -> None:
         db = client[icao_code]  # Use ICAO code as the database name
         collection = db[COLLECTION_NAME]
 
-        collection.insert_one(data)
+        # collection.insert_one(data)
         logger.info(f"Data for {icao_code} stored in MongoDB successfully.")
     except pymongo.errors.ConnectionFailure as e:
         logger.error(f"Connection failure storing data for {icao_code}: {e}")
@@ -140,7 +142,7 @@ def main():
         if data:
             results = parse_data(data)
             logger.info(f"Fetched and parsed data for {icao_code}")
-            # logger.debug(json.dumps(results, indent=4))
+            logger.debug(json.dumps(results, indent=4))
 
             store_data(results, icao_code)
         else:
@@ -160,3 +162,5 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         sleep(1)
+
+
