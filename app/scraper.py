@@ -126,7 +126,7 @@ def store_data(data, icao_code) -> None:
         db = client[icao_code]  # Use ICAO code as the database name
         collection = db[COLLECTION_NAME]
 
-        # collection.insert_one(data)
+        collection.insert_one(data)
         logger.info(f"Data for {icao_code} stored in MongoDB successfully.")
     except pymongo.errors.ConnectionFailure as e:
         logger.error(f"Connection failure storing data for {icao_code}: {e}")
