@@ -1,4 +1,0 @@
-pymongo==4.7.2
-requests==2.31.0
-schedule==1.2.2
-pytz==2024.2
